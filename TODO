@@ -1,0 +1,31 @@
+Planet Simulator X
+------------------
+
+High fidelity simulator of a planet and its systems including but not limited to:
+- Geology / magma / plate tectonics
+- Weather
+- Asteroid impacts
+- Biomes
+- Life
+
+Architecture
+------------
+
+Two main parts:
+
+1. Visualizer
+
+Lets us explore the planet and what it's generated so far.  It also allows us
+to control the engine to do "god" actions, like spawn meteor, etc.  Also, control
+time and pausing things.
+
+Visualizer should be decoupled from the engine to allow the engine to run as fast
+as possible as performance will likely be a limiting factor
+
+2. Engine
+
+Use scipy and pandas dataframes to do math on a large fixed array of tiles representing
+the world, as a large rectangular matrix of tiles, like 5000x2000 tiles, although the
+tiles don't have to represent equal area.
+
+
