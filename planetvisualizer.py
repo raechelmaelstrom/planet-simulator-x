@@ -8,11 +8,16 @@ LOG = logging.getLogger("PlanetVisualizer")
 
 class PlanetVisualizer:
 
-    def __init__(self):
+    def __init__(self, model):
         pygame.display.set_caption("Planet Simulator X")
         self.screen = pygame.display.set_mode((constants.RESOLUTION_WIDTH, constants.RESOLUTION_HEIGHT))
         self.clock = pygame.time.Clock()
         LOG.info("Screen initialized")
+
+        self.model = model
+        self.paused = False
+        self.cursor_x = 0
+        self.cursor_y = 0
 
     def _event_handler(self) -> bool:
         # Handles all keyboard and input events.
@@ -23,51 +28,64 @@ class PlanetVisualizer:
         self.clock.tick(constants.MAX_FPS)
         fps = self.clock.get_fps() 
         LOG.debug(f"FPS: {fps}")
+        LOG.debug(f"Cursor: {self.cursor_x}, {self.cursor_y}")
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
 
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_p]:
+            # Pause
+            self.paused = not self.paused
+        if keys[pygame.K_w]:
+            # Up
+            self.cursor_y -= 1
+        if keys[pygame.K_s]:
+            # Down
+            self.cursor_y += 1
+        if keys[pygame.K_a]:
+            # Left
+            self.cursor_x -= 1
+        if keys[pygame.K_d]:
+            # Right
+            self.cursor_x += 1
+
+
         return True
 
     def run(self):
-        # Define colors (R, G, B)
-        BLACK = (0, 0, 0)
-        BLUE = (0, 0, 255)
-
-        # Create a pygame.Rect object
-        # Syntax: pygame.Rect(left, top, width, height)
-        rect_position_and_size = pygame.Rect(50, 50, 100, 75)
-
-        blue_shade = 0
         tile_size = 32
+
+        y_tiles = int(constants.RESOLUTION_HEIGHT / tile_size) + 1
+        x_tiles = int(constants.RESOLUTION_WIDTH / tile_size) + 1
 
         # Game loop
         while self._event_handler():
+            if self.paused:
+                continue
+
             LOG.debug("Drawing screen...")
-            self.screen.fill(BLACK)
+            self.screen.fill((0,0,0))
 
             y = 0
-            while y < constants.RESOLUTION_HEIGHT:
+            while y <= y_tiles:
 
                 x = 0
-                while x < constants.RESOLUTION_WIDTH:
-                    #LOG.debug(f"Drawing tile ({x}, {y}) with color {blue_shade}")
+                while x <= x_tiles:
+                    x_pos = x * tile_size
+                    y_pos = y * tile_size
+
+                    #LOG.debug(f"Drawing tile ({x}, {y}) at ({x_pos}, {y_pos})")
 
                     pygame.draw.rect(
                             self.screen, 
-                            (0, 0, blue_shade), 
-                            (x, y, tile_size, tile_size)
+                            (0, 0, self.model.world[self.cursor_x + x][self.cursor_y + y]),
+                            (x_pos, y_pos, tile_size, tile_size)
                     )
 
-                    blue_shade += 1
-                    if blue_shade > 255:
-                        blue_shade = 0
-
-                    x += tile_size
-
-                y += tile_size
-
+                    x += 1
+                y += 1
 
             pygame.display.flip()
 

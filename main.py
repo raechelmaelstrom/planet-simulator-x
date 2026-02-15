@@ -3,6 +3,7 @@ import sys
 
 import pygame
 
+import planetmodel
 import planetvisualizer
 
 LOG = logging.getLogger("main")
@@ -10,7 +11,8 @@ LOG = logging.getLogger("main")
 def main():
     pygame.init()
 
-    pv = planetvisualizer.PlanetVisualizer()
+    pm = planetmodel.PlanetModel()
+    pv = planetvisualizer.PlanetVisualizer(pm)
     pv.run()
 
     pygame.quit()
