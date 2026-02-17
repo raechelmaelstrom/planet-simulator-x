@@ -9,15 +9,35 @@ LOG = logging.getLogger("PlanetVisualizer")
 class PlanetVisualizer:
 
     def __init__(self, model):
+        self.model = model
+
         pygame.display.set_caption("Planet Simulator X")
         self.screen = pygame.display.set_mode((constants.RESOLUTION_WIDTH, constants.RESOLUTION_HEIGHT))
         self.clock = pygame.time.Clock()
         LOG.info("Screen initialized")
 
-        self.model = model
         self.paused = False
-        self.cursor_x = 0
-        self.cursor_y = 0
+
+        # Top x,y coordinates in model of viewing window
+        self.window_x = 0
+        self.window_y = 0
+
+        self.tile_size = 32
+        self.y_tiles = int(constants.RESOLUTION_HEIGHT / self.tile_size) + 1
+        self.x_tiles = int(constants.RESOLUTION_WIDTH / self.tile_size) + 1
+
+    def _map_tile_to_model(self, tile_x, tile_y) -> tuple[int, int]:
+        # Map from tile-space to coordinates in the model
+        size_x, size_y = self.model.size()
+        model_x = self.window_x + tile_x
+        if model_x >= size_x:
+            model_x -= size_x
+
+        model_y = self.window_y + tile_y
+        if model_y >= size_y:
+            model_y -= size_y
+
+        return (model_x, model_y)
 
     def _event_handler(self) -> bool:
         # Handles all keyboard and input events.
@@ -28,7 +48,9 @@ class PlanetVisualizer:
         self.clock.tick(constants.MAX_FPS)
         fps = self.clock.get_fps() 
         LOG.debug(f"FPS: {fps}")
-        LOG.debug(f"Cursor: {self.cursor_x}, {self.cursor_y}")
+        LOG.debug(f"Window: {self.window_x}, {self.window_y}")
+
+        model_size_x, model_size_y = self.model.size()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -40,27 +62,32 @@ class PlanetVisualizer:
             self.paused = not self.paused
         if keys[pygame.K_w]:
             # Up
-            self.cursor_y -= 1
+            if self.window_y > 0:
+                self.window_y -= 1
         if keys[pygame.K_s]:
             # Down
-            self.cursor_y += 1
+            if self.window_y + self.y_tiles < model_size_y:
+                self.window_y += 1
         if keys[pygame.K_a]:
             # Left
-            self.cursor_x -= 1
+            self.window_x -= 1
+
+            # If we've scrolled left over the edge...
+            if self.window_x < 0:
+                self.window_x += model_size_x
+                LOG.debug("Wrapping left: %d", self.window_x)
+
         if keys[pygame.K_d]:
             # Right
-            self.cursor_x += 1
+            self.window_x += 1
 
+            # If we've scrolled right over the edge...
+            if self.window_x >= model_size_x:
+                self.window_x -= model_size_x
 
         return True
 
     def run(self):
-        tile_size = 32
-
-        y_tiles = int(constants.RESOLUTION_HEIGHT / tile_size) + 1
-        x_tiles = int(constants.RESOLUTION_WIDTH / tile_size) + 1
-
-        # Game loop
         while self._event_handler():
             if self.paused:
                 continue
@@ -69,19 +96,21 @@ class PlanetVisualizer:
             self.screen.fill((0,0,0))
 
             y = 0
-            while y <= y_tiles:
+            while y <= self.y_tiles:
 
                 x = 0
-                while x <= x_tiles:
-                    x_pos = x * tile_size
-                    y_pos = y * tile_size
+                while x <= self.x_tiles:
+                    x_pos = x * self.tile_size
+                    y_pos = y * self.tile_size
 
-                    #LOG.debug(f"Drawing tile ({x}, {y}) at ({x_pos}, {y_pos})")
+                    model_x, model_y = self._map_tile_to_model(x, y)
+                    #LOG.debug("Drawing tile %s at %s with model data %s",
+                    #          (x, y), (x_pos, y_pos), (model_x, model_y))
 
                     pygame.draw.rect(
                             self.screen, 
-                            (0, 0, self.model.world[self.cursor_x + x][self.cursor_y + y]),
-                            (x_pos, y_pos, tile_size, tile_size)
+                            (0, 0, self.model.world[model_x][model_y]),
+                            (x_pos, y_pos, self.tile_size, self.tile_size)
                     )
 
                     x += 1

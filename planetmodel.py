@@ -5,6 +5,8 @@ import constants
 class PlanetModel:
     def __init__(self):
         self.rng = np.random.default_rng()
-        size = (constants.PLANET_TILES_X, constants.PLANET_TILES_Y)
-        self.world = self.rng.integers(low=0, high=255, size=size)
+        self.world = self.rng.integers(low=0, high=255, size=self.size())
+
+    def size(self):
+        return (constants.PLANET_TILES_X, constants.PLANET_TILES_Y)
 
