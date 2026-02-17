@@ -26,6 +26,10 @@ class PlanetVisualizer:
         self.y_tiles = int(constants.RESOLUTION_HEIGHT / self.tile_size) + 1
         self.x_tiles = int(constants.RESOLUTION_WIDTH / self.tile_size) + 1
 
+        # Cursor coodinates
+        self.cursor_x = int(self.x_tiles / 3)
+        self.cursor_y = int(self.y_tiles / 2)
+
     def _map_tile_to_model(self, tile_x, tile_y) -> tuple[int, int]:
         # Map from tile-space to coordinates in the model
         size_x, size_y = self.model.size()
@@ -49,6 +53,7 @@ class PlanetVisualizer:
         fps = self.clock.get_fps() 
         LOG.debug(f"FPS: {fps}")
         LOG.debug(f"Window: {self.window_x}, {self.window_y}")
+        LOG.debug(f"Cursor: {self.cursor_x}, {self.cursor_y}")
 
         model_size_x, model_size_y = self.model.size()
 
@@ -62,11 +67,27 @@ class PlanetVisualizer:
             self.paused = not self.paused
         if keys[pygame.K_w]:
             # Up
-            if self.window_y > 0:
+            if self.window_y == 0:
+                # Window pinned at top, move the cursor up until the top
+                if self.cursor_y > 0:
+                    self.cursor_y -= 1
+            elif self.cursor_y > self.y_tiles / 2:
+                # Window pinned at the bottom, move cursor up, but not window
+                self.cursor_y -= 1
+            else:
+                # Slide window up
                 self.window_y -= 1
         if keys[pygame.K_s]:
             # Down
-            if self.window_y + self.y_tiles < model_size_y:
+            if self.window_y == 0 and self.cursor_y < (self.y_tiles / 2):
+                # Window pinned at top, move cursor down, but not window
+                self.cursor_y += 1
+            elif self.window_y + self.y_tiles == model_size_y:
+                # Window pinned at bottom, move cursor down until the bottom
+                if self.cursor_y < self.y_tiles - 1:
+                    self.cursor_y += 1
+            elif self.window_y + self.y_tiles < model_size_y:
+                # Slide window down
                 self.window_y += 1
         if keys[pygame.K_a]:
             # Left
@@ -103,13 +124,19 @@ class PlanetVisualizer:
                     x_pos = x * self.tile_size
                     y_pos = y * self.tile_size
 
-                    model_x, model_y = self._map_tile_to_model(x, y)
+                    if (self.cursor_x, self.cursor_y) == (x, y) and \
+                       (int(pygame.time.get_ticks() / 500) % 2):
+                        #LOG.debug("cursor blinking")
+                        color = (255, 255, 255)
+                    else:
+                        model_x, model_y = self._map_tile_to_model(x, y)
+                        color = (0, 0, self.model.world[model_x][model_y])
+
                     #LOG.debug("Drawing tile %s at %s with model data %s",
                     #          (x, y), (x_pos, y_pos), (model_x, model_y))
-
                     pygame.draw.rect(
-                            self.screen, 
-                            (0, 0, self.model.world[model_x][model_y]),
+                            self.screen,
+                            color,
                             (x_pos, y_pos, self.tile_size, self.tile_size)
                     )
 
