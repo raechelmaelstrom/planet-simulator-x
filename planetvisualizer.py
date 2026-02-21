@@ -48,10 +48,15 @@ class PlanetVisualizer:
         max_altitude = 12500
         altitude_steps = max_altitude / 255
 
-        altitude = self.model.world[model_x][model_y]
-        color = min(altitude / altitude_steps, 255)
+        altitude = self.model.crust.map[model_x][model_y]
 
-        #LOG.debug(f"Color at ({model_x}, {model_y}) is {color} for altitude {altitude}")
+        color = altitude / altitude_steps
+        if color > 255:
+            color = 255
+        if color < 0:
+            color = 0
+
+        LOG.debug(f"Color at ({model_x}, {model_y}) is {color} for altitude {altitude}")
         return (color, color, color)
 
 
@@ -72,6 +77,15 @@ class PlanetVisualizer:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_m:
+                    self.model.meteor_impact(
+                        self._map_tile_to_model_point(
+                            self.cursor_x,
+                            self.cursor_y
+                        )
+                    )
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_p]:

@@ -19,7 +19,7 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     LOG.info("Starting up!")
     main()
     sys.exit(0)
