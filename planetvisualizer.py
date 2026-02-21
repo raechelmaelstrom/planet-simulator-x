@@ -30,7 +30,7 @@ class PlanetVisualizer:
         self.cursor_x = int(self.x_tiles / 3)
         self.cursor_y = int(self.y_tiles / 2)
 
-    def _map_tile_to_model(self, tile_x, tile_y) -> tuple[int, int]:
+    def _map_tile_to_model_point(self, tile_x, tile_y) -> tuple[int, int]:
         # Map from tile-space to coordinates in the model
         size_x, size_y = self.model.size()
         model_x = self.window_x + tile_x
@@ -42,6 +42,18 @@ class PlanetVisualizer:
             model_y -= size_y
 
         return (model_x, model_y)
+
+    def _color_for_model_point(self, model_x, model_y) -> tuple[int, int, int]:
+        # Get the color for a model point
+        max_altitude = 12500
+        altitude_steps = max_altitude / 255
+
+        altitude = self.model.world[model_x][model_y]
+        color = min(altitude / altitude_steps, 255)
+
+        #LOG.debug(f"Color at ({model_x}, {model_y}) is {color} for altitude {altitude}")
+        return (color, color, color)
+
 
     def _event_handler(self) -> bool:
         # Handles all keyboard and input events.
@@ -129,8 +141,8 @@ class PlanetVisualizer:
                         #LOG.debug("cursor blinking")
                         color = (255, 255, 255)
                     else:
-                        model_x, model_y = self._map_tile_to_model(x, y)
-                        color = (0, 0, self.model.world[model_x][model_y])
+                        model_x, model_y = self._map_tile_to_model_point(x, y)
+                        color = self._color_for_model_point(model_x, model_y)
 
                     #LOG.debug("Drawing tile %s at %s with model data %s",
                     #          (x, y), (x_pos, y_pos), (model_x, model_y))
